@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS dispute_history (
+    id BIGSERIAL PRIMARY KEY,
+    dispute_id BIGINT NOT NULL,
+    previous_status VARCHAR(50) NOT NULL,
+    new_status VARCHAR(50) NOT NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

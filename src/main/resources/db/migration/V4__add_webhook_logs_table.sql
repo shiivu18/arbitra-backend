@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS webhook_logs (
+    id BIGSERIAL PRIMARY KEY,
+    dispute_id BIGINT NOT NULL,
+    event_type VARCHAR(255) NOT NULL,
+    reason TEXT,
+    amount DOUBLE PRECISION NOT NULL,
+    received_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
