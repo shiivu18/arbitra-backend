@@ -49,7 +49,12 @@ public class DisputeController {
     public ResponseEntity<List<DisputeHistory>> getDisputeHistory(@PathVariable Long disputeId) {
         List<DisputeHistory> history = disputeHistoryRepository.findByDisputeId(disputeId);
         return ResponseEntity.ok(history);
+
+
+        
     }
+
+    
 
     @PatchMapping("/{disputeId}/status")
     @Transactional

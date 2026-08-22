@@ -12,17 +12,29 @@ public class JwtTokenProvider {
     private final Key jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     private final long jwtExpirationInMs = 86400000; // 24 hours
 
-    public String generateToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+  public String generateToken(String username, String role) {
+    Date now = new Date();
+    Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(expiryDate)
-                .signWith(jwtSecret)
-                .compact();
-    }
+    return Jwts.builder()
+            .setSubject(username)
+            .claim("role", role)
+            .setIssuedAt(new Date())
+            .setExpiration(expiryDate)
+            .signWith(jwtSecret)
+            .compact();
+}
+
+public String getRoleFromJWT(String token) {
+    Claims claims = Jwts.parserBuilder()
+            .setSigningKey(jwtSecret)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+    String role = claims.get("role", String.class);
+    return role != null ? role : "MERCHANT"; // Fallback default role
+}
 
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parserBuilder()

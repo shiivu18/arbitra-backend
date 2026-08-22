@@ -17,8 +17,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> authenticateUser(@RequestParam String username) {
-        String jwt = tokenProvider.generateToken(username);
+    public ResponseEntity<Map<String, String>> authenticateUser(
+            @RequestParam String username,
+            @RequestParam(defaultValue = "MERCHANT") String role) {
+        String jwt = tokenProvider.generateToken(username, role);
         return ResponseEntity.ok(Map.of("accessToken", jwt, "tokenType", "Bearer"));
     }
 }
