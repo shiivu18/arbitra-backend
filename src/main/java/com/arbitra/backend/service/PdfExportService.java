@@ -1,63 +1,59 @@
 package com.arbitra.backend.service;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import com.arbitra.backend.model.Dispute;
+import com.arbitra.backend.repository.DisputeRepository;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 @Service
 public class PdfExportService {
 
-    public byte[] generateDisputePdf(Long disputeId, String defenseLetter) throws IOException {
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage();
-            document.addPage(page);
+    private final DisputeRepository disputeRepository;
 
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                // Title
-                contentStream.beginText();
-                contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
-                contentStream.newLineAtOffset(50, 750);
-                contentStream.showText("ARBITRA - CHARGEBACK DEFENSE REBUTTAL");
-                contentStream.endText();
+    public PdfExportService(DisputeRepository disputeRepository) {
+        this.disputeRepository = disputeRepository;
+    }
 
-                // Dispute Metadata
-                contentStream.beginText();
-                contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-                contentStream.newLineAtOffset(50, 720);
-                contentStream.showText("Dispute ID: " + disputeId);
-                contentStream.endText();
+    // Overload 1: Supports PdfExportController (passing a Dispute object)
+    public byte[] generateDisputePdf(Dispute dispute) {
+        return buildPdf(dispute.getId(), "Standard automated defense portfolio.");
+    }
 
-                // Defense Letter Body (Splitting lines safely for simple rendering)
-                contentStream.beginText();
-                contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 10);
-                contentStream.newLineAtOffset(50, 680);
-                
-                String[] lines = defenseLetter.split("\n");
-                int yOffset = 0;
-                for (String line : lines) {
-                    if (yOffset > 550) { // prevent overflow off the page
-                        break;
-                    }
-                    // Clean up markdown characters for clean PDF text
-                    String cleanLine = line.replaceAll("[#*>]", "").trim();
-                    if (!cleanLine.isEmpty()) {
-                        contentStream.showText(cleanLine.length() > 90 ? cleanLine.substring(0, 90) : cleanLine);
-                        contentStream.newLineAtOffset(0, -15);
-                        yOffset += 15;
-                    }
-                }
-                contentStream.endText();
-            }
+    // Overload 2: Supports PdfController (passing a Long disputeId and String letter)
+    public byte[] generateDisputePdf(Long disputeId, String letterText) {
+        return buildPdf(disputeId, letterText);
+    }
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            document.save(baos);
-            return baos.toByteArray();
+    // Shared PDF generation logic
+    private byte[] buildPdf(Long disputeId, String letterText) {
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new RuntimeException("Dispute not found"));
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document document = new Document();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            document.add(new Paragraph("ARBITRA - FINANCIAL DISPUTE DEFENSE PORTFOLIO"));
+            document.add(new Paragraph("--------------------------------------------------"));
+            document.add(new Paragraph("Dispute ID: " + dispute.getId()));
+            document.add(new Paragraph("Status: " + dispute.getStatus()));
+            document.add(new Paragraph("\n"));
+            document.add(new Paragraph("Defense Letter / Notes:"));
+            document.add(new Paragraph(letterText != null ? letterText : "Standard automated defense portfolio."));
+
+            document.close();
+        } catch (DocumentException e) {
+            throw new RuntimeException("Error generating PDF defense portfolio", e);
         }
+
+        return out.toByteArray();
     }
 }
